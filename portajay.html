@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Find Your Next Developer | Ajay Pal</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font: Manrope -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Icons (Phosphor Icons) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --bg-dark: #0D0D10;
+            --accent: #E94057;
+            --accent-glow: rgba(233, 64, 87, 0.5);
+            --like: #00E676;
+            --like-glow: rgba(0, 230, 118, 0.5);
+            --nope: #FF3B30;
+            --nope-glow: rgba(255, 59, 48, 0.5);
+            --text-light: #F1F1F1;
+            --glass-bg: rgba(26, 26, 30, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- Base App Body --- */
+        html, body {
+            height: 100%;
+            overflow: hidden; /* CRITICAL: Prevents scrolling */
+        }
+
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* --- Animated Aurora Background --- */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            z-index: -10;
+            pointer-events: none;
+            background: 
+                radial-gradient(circle at 10% 20%, var(--accent-glow) 0%, transparent 30%),
+                radial-gradient(circle at 80% 30%, rgba(60, 80, 255, 0.2) 0%, transparent 30%),
+                radial-gradient(circle at 50% 80%, rgba(80, 255, 200, 0.1) 0%, transparent 30%);
+            animation: animateAurora 20s linear infinite alternate;
+        }
+
+        @keyframes animateAurora {
+            0% { transform: rotate(0deg) scale(1.5); opacity: 0.5; }
+            100% { transform: rotate(15deg) scale(2); opacity: 0.8; }
+        }
+
+        /* --- Loader Overlay (NEW) --- */
+        .loader-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(13, 13, 16, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease-out;
+        }
+        .loader-overlay.visible {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .loader-content {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+            color: var(--accent);
+        }
+        .loader-content i {
+            font-size: 5rem;
+            opacity: 0;
+            animation: loader-fade-in 0.5s ease forwards;
+        }
+        .loader-content i.ph-laptop { animation-delay: 0.1s; }
+        .loader-content i.ph-user { animation-delay: 0.3s; }
+
+        .loader-arrow {
+            position: relative;
+            width: 80px;
+            height: 5rem;
+            overflow: hidden;
+        }
+        .loader-arrow i {
+            position: absolute;
+            left: 0;
+            opacity: 1;
+            animation: shoot-arrow 0.8s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+            animation-delay: 0.5s;
+            transform: translateX(-100px);
+        }
+        @keyframes loader-fade-in {
+            to { opacity: 1; }
+        }
+        @keyframes shoot-arrow {
+            from { transform: translateX(-100px); opacity: 0; }
+            40% { transform: translateX(40px); opacity: 1; }
+            60% { transform: translateX(40px); opacity: 1; }
+            to { transform: translateX(180px); opacity: 0; }
+        }
+        .loader-text {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent-glow);
+            margin-top: 1rem;
+            opacity: 0;
+            animation: loader-fade-in 0.5s 1.0s forwards;
+        }
+
+        /* --- Slider Container (NEW) --- */
+        .slider-container {
+            display: flex;
+            width: 500%; /* 100% * 5 slides */
+            height: 100vh;
+            /* The magic transition */
+            transition: transform 0.9s cubic-bezier(0.83, 0, 0.17, 1);
+        }
+
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            overflow: hidden; /* Prevent internal scroll */
+            position: relative; /* For content animation */
+        }
+
+        /* --- Slide Content Animation --- */
+        /* We add 'animate-content' class *after* the slide lands */
+        .slide-content {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s 0.4s ease, transform 0.6s 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .slide.active .slide-content {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        /* Stagger children animation */
+        .slide.active .slide-content > * {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slide-in-up 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Staggered load-in for content */
+        .slide.active .slide-content > *:nth-child(1) { animation-delay: 0.5s; }
+        .slide.active .slide-content > *:nth-child(2) { animation-delay: 0.6s; }
+        .slide.active .slide-content > *:nth-child(3) { animation-delay: 0.7s; }
+        .slide.active .slide-content > *:nth-child(4) { animation-delay: 0.8s; }
+        .slide.active .slide-content > *:nth-child(5) { animation-delay: 0.9s; }
+        .slide.active .slide-content > *:nth-child(6) { animation-delay: 1.0s; }
+
+        @keyframes slide-in-up {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Slide-Specific Styles --- */
+        
+        /* Profile Pic */
+        .profile-pic {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 4px solid var(--accent);
+            box-shadow: 0 0 30px var(--accent-glow);
+            padding: 4px;
+            background-color: var(--bg-dark);
+            object-fit: cover; /* ADDED: Ensures your image fills the circle perfectly */
+        }
+
+        /* Project Card */
+        .project-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.25rem; /* 20px */
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+        .project-image {
+            height: 250px;
+            background-color: #333;
+            border-top-left-radius: 1.25rem;
+            border-top-right-radius: 1.25rem;
+            background-size: cover;
+            background-position: center;
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .tech-vibe {
+            background: var(--accent-light);
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* --- Action Buttons (Like/Nope) --- */
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .action-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse-base 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        @keyframes pulse-base {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .action-btn i {
+            font-size: 2.5rem; /* 40px */
+        }
+        .action-btn.nope:hover {
+            background: var(--nope);
+            box-shadow: 0 0 25px var(--nope-glow);
+            transform: scale(1.1);
+            animation-name: none;
+        }
+        .action-btn.like:hover {
+            background: var(--like);
+            box-shadow: 0 0 25px var(--like-glow);
+            transform: scale(1.1);
+            animation-name: none;
+        }
+        .action-btn.nope i { color: var(--nope); }
+        .action-btn.like i { color: var(--like); }
+        .action-btn.nope:hover i, .action-btn.like:hover i {
+            color: white;
+        }
+
+        /* --- Match Screen --- */
+        #match-title {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--accent);
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+        .check-icon {
+            color: var(--accent);
+            flex-shrink: 0;
+        }
+        .btn-accent {
+            background: var(--accent);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 999px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px var(--accent-glow);
+        }
+        .btn-accent:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 30px var(--accent-glow);
+        }
+        .btn-ghost {
+            background: transparent;
+            color: var(--text-light);
+            border: 1px solid var(--glass-border);
+            padding: 0.75rem 1.5rem;
+            border-radius: 999px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-ghost:hover {
+            background: var(--glass-bg);
+            border-color: var(--text-light);
+            transform: scale(1.05);
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- --- Loader Overlay --- -->
+    <div id="loader" class="loader-overlay">
+        <div class="loader-content">
+            <i class="ph-bold ph-laptop"></i>
+            <div class="loader-arrow">
+                <i class="ph-bold ph-arrow-right"></i>
+            </div>
+            <i class="ph-bold ph-user"></i>
+        </div>
+        <div class="loader-text">Connecting...</div>
+    </div>
+
+    <!-- --- Main Slider Container --- -->
+    <main id="slider-container" class="slider-container">
+
+        <!-- ===== SLIDE 0: HOME / PROFILE ===== -->
+        <section id="slide-home" class="slide active">
+            <div class="slide-content flex flex-col items-center text-center max-w-lg">
+                <!-- UPDATED: Replaced placeholder with your uploaded image -->
+                <img src="aj.jpg" alt="Ajay Pal" class="profile-pic">
+                <h1 class="text-4xl font-bold mt-6">Ajay Pal, 20</h1>
+                <h2 class="text-xl" style="color: var(--accent);">My vibe: "Building with Ambition"</h2>
+                <p class="text-lg text-gray-300 mt-4">
+                    My philosophy: **Less Chat, More Build.**
+                    <br>
+                    I thrive on solving tough problems, shipping end-to-end features, and collaborating on product direction.
+                </p>
+                <p class="text-gray-400 mt-6">Swipe right to see my work →</p>
+                
+                <div class="action-buttons">
+                    <button class="action-btn nope btn-nope">
+                        <i class="ph-bold ph-x"></i>
+                    </button>
+                    <button class="action-btn like btn-like">
+                        <i class="ph-bold ph-heart"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== SLIDE 1: PROJECT 1 (Finance Saathi) ===== -->
+        <section id="slide-project-1" class="slide">
+            <!-- WRAPPER DIV with 'slide-content' added -->
+            <div class="slide-content flex flex-col items-center">
+                <!-- 'slide-content' class REMOVED from project-card -->
+                <div class="project-card">
+                    <div class="project-image" style="background-image: url('https://placehold.co/600x400/1a1d24/2a2d34?text=Finance+Saathi&font=manrope')"></div>
+                    <div class="p-6">
+                    </p>
+                    <p class="text-md text-gray-400 mt-3">
+                        <strong>Looking for:</strong> A user who appreciates a clean **Node.js API**, a **scalable React frontend**, **Python Flask**, **Python Flask**, and secure **onboarding & transactions**.
+                    </p>
+                    
+                    <div class="mt-4">
+                        <h4 class="font-semibold mb-2 text-gray-300">My Vibes (Tech):</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="tech-vibe">React, Flask</span>
+                            <span class="tech-vibe">Node.js ,Python , JavaScript, Java</span>
+                            <span class="tech-vibe">MySQL</span>
+                            <span class="tech-vibe">AI Tools</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 mt-6">
+                        <a href="https://github.com/ajay5689pal/finacnesaathi-test1" target="_blank" rel="noopener noreferrer" class="btn-ghost w-full text-center">GitHub</a>
+                        <a href="https://finacnesaathi-test1-3.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn-accent w-full text-center">Live Demo</a>
+                    </div>
+                </div>
+                <!-- Action buttons are separate from the card -->
+                <!-- 'slide-content' class REMOVED from action-buttons -->
+                <div class="action-buttons">
+                    <button class="action-btn nope btn-nope">
+                        <i class="ph-bold ph-x"></i>
+                    </button>
+                    <button class="action-btn like btn-like">
+                        <i class="ph-bold ph-heart"></i>
+                    </button>
+                </div>
+            </div> <!-- WRAPPER DIV closed -->
+        </section>
+
+        <!-- ===== SLIDE 2: PROJECT 2 (BCA-Walla) ===== -->
+        <section id="slide-project-2" class="slide">
+            <!-- WRAPPER DIV with 'slide-content' added -->
+            <div class="slide-content flex flex-col items-center">
+                <!-- 'slide-content' class REMOVED from project-card -->
+                <div class="project-card">
+                    <div class="project-image" style="background-image: url('https://placehold.co/600x400/1a1d24/2a2d34?text=BCA-Walla&font=manrope')"></div>
+                    <div class="p-6">
+                    <p class="text-md text-gray-400 mt-3">
+                        <strong>Looking for:</strong> A student who needs a stable, reliable app. My **Python (Flask)** backend can handle **payments** and **reporting** all night long.
+                    </p>
+                    
+                    <div class="mt-4">
+                        <h4 class="font-semibold mb-2 text-gray-300">My Vibes (Tech):</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="tech-vibe">Python</span>
+                            <span class="tech-vibe">Flask</span>
+                            <span class="tech-vibe">SQL</span>
+                            <span class="tech-vibe">API Integration</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 mt-6">
+                        <a href="https://github.com/ajay5689pal/onlinewala/tree/master" target="_blank" rel="noopener noreferrer" class="btn-ghost w-full text-center">GitHub</a>
+                        <a href="https://bcawalla.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn-accent w-full text-center">Live Demo</a>
+                    </div>
+                </div>
+                <!-- 'slide-content' class REMOVED from action-buttons -->
+                <div class="action-buttons">
+                    <button class="action-btn nope btn-nope">
+                        <i class="ph-bold ph-x"></i>
+                    </button>
+                    <button class="action-btn like btn-like">
+                        <i class="ph-bold ph-heart"></i>
+                    </button>
+                </div>
+            </div> <!-- WRAPPER DIV closed -->
+        </section>
+
+        <!-- ===== SLIDE 3: PROJECT 3 (SkillDex) ===== -->
+        <section id="slide-project-3" class="slide">
+            <!-- WRAPPER DIV with 'slide-content' added -->
+            <div class="slide-content flex flex-col items-center">
+                <!-- 'slide-content' class REMOVED from project-card -->
+                <div class="project-card">
+                    <div class="project-image" style="background-image: url('https://placehold.co/600x400/1a1d24/2a2d34?text=SkillDex&font=manrope')"></div>
+                    <div class="p-6">
+                    <p class="text-md text-gray-400 mt-3">
+                        <strong>Looking for:</strong> A user who appreciates a slick, gamified UI. My **React** and **TypeScript** components are super **scalable** and love to be challenged.
+                    </p>
+                    
+                    <div class="mt-4">
+                        <h4 class="font-semibold mb-2 text-gray-300">My Vibes (Tech):</h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span class="tech-vibe">React</span>
+                            <span class="tech-vibe">TypeScript</span>
+                            <span class="tech-vibe">Gamification</span>
+                            <span class="tech-vibe">CSS</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4 mt-6">
+                        <a href="https://github.com/ajay5689pal/Skilldex-1" target="_blank" rel="noopener noreferrer" class="btn-ghost w-full text-center">GitHub</a>
+                        <a href="https://skilldex-1-1.onrender.com/" target="_blank" rel="noopener noreferrer" class="btn-accent w-full text-center">Live Demo</a>
+                    </div>
+                </div>
+                <!-- 'slide-content' class REMOVED from action-buttons -->
+                <div class="action-buttons">
+                    <button class="action-btn nope btn-nope">
+                        <i class="ph-bold ph-x"></i>
+                    </button>
+                    <button class="action-btn like btn-like">
+                        <i class="ph-bold ph-heart"></i>
+                    </button>
+                </div>
+            </div> <!-- WRAPPER DIV closed -->
+        </section>
+
+        <!-- ===== SLIDE 4: THE MATCH ===== -->
+        <section id="slide-match" class="slide">
+            <div class="slide-content flex flex-col items-center text-center max-w-lg">
+                <h2 id="match-title">It's a Fit!</h2>
+        
+                <p class="text-lg md:text-xl text-gray-300 mt-4 leading-relaxed">
+                    You've matched with a builder who's ready to ship.
+                    <br>
+                    Let's skip the endless emails and lock in a plan.
+                </p>
+
+                <!-- Verification Section -->
+                <div class="verification p-8">
+                    <ul class="space-y-4 max-w-xs mx-auto">
+                        <li class="flex items-center space-x-3">
+                            <svg class="check-icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="font-semibold text-gray-300">Verified Builder (Shipped Projects)</span>
+                        </li>
+                        <li class="flex items-center space-x-3">
+                            <svg class="check-icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="font-semibold text-gray-300">Verified Collaborator (Founders & Teams)</span>
+                        </li>
+                        <li class="flex items-center space-x-3">
+                            <svg class="check-icon w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="font-semibold text-gray-300">Verified & Ready (Growth Mindset)</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <!-- Contact Buttons -->
+                <div class="contact-buttons flex flex-col sm:flex-row gap-6 justify-center mt-4">
+                    <a href="mailto:Ajay5688pal@gmail.com" class="btn-accent text-lg !px-10 !py-3">
+                        Send an Email
+                    </a>
+                    <a href="https://www.linkedin.com/in/ajay-pal-496041344/" target="_blank" rel="noopener noreferrer" class="btn-ghost text-lg !px-10 !py-3">
+                        Connect on LinkedIn
+                    </a>
+                </div>
+
+                <!-- Restart Button -->
+                <div class="action-buttons">
+                    <button class="action-btn nope btn-nope" title="Start Over">
+                        <i class="ph-bold ph-arrow-counter-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Custom JavaScript for Slider Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const slider = document.getElementById('slider-container');
+            const slides = document.querySelectorAll('.slide');
+            const loader = document.getElementById('loader');
+            const totalSlides = slides.length;
+            let currentSlide = 0;
+
+            // --- Helper Functions ---
+            function showLoader() {
+                loader.classList.add('visible');
+            }
+
+            function hideLoader() {
+                loader.classList.remove('visible');
+            }
+
+            function moveToSlide(slideIndex) {
+                // Remove 'active' from all slides
+                slides.forEach(s => s.classList.remove('active'));
+
+                // Set new transform
+                slider.style.transform = `translateX(-${slideIndex * 100}vw)`;
+                currentSlide = slideIndex;
+
+                // Add 'active' to the new current slide
+                // This triggers the content animation
+                const newActiveSlide = slides[currentSlide];
+                if (newActiveSlide) {
+                    // Use a tiny delay to ensure the 'active' class is added *after*
+                    // the slide has started moving, for a smoother content animation
+                    setTimeout(() => {
+                        newActiveSlide.classList.add('active');
+                    }, 500); // Wait half a sec
+                }
+            }
+
+            // --- Main Actions ---
+            function nextSlide() {
+                if (currentSlide >= totalSlides - 1) return; // Already at the end
+
+                showLoader();
+                setTimeout(() => {
+                    moveToSlide(currentSlide + 1);
+                    hideLoader();
+                }, 1500); // 1.5 second loader animation
+            }
+
+            function restartDeck() {
+                showLoader();
+                setTimeout(() => {
+                    moveToSlide(0);
+                    hideLoader();
+                }, 1500); // 1.5 second loader animation
+            }
+
+            // --- Event Listeners ---
+            document.querySelectorAll('.btn-like').forEach(button => {
+                button.addEventListener('click', nextSlide);
+            });
+
+            document.querySelectorAll('.btn-nope').forEach(button => {
+                button.addEventListener('click', restartDeck);
+            });
+
+        });
+    </script>
+
+</body>
+</html>
+
+
+
